@@ -2,14 +2,26 @@ import { Link } from 'react-router-dom'
 import { useState } from "react"
 import { LayoutComponents } from "../../components/LayoutComponents"
 import jg from "../../assets/jg.png";
+import { api } from '../../services/api';
 
 export const Register =()=>{
     const [email, setEmail] = useState('')
-    const [passworld, setPassworld] = useState('')
+    const [password, setPassword] = useState('')
     const [name, setName] = useState("")
+
+    const handleSaveUser = async (e) => {
+      e.preventDefault();
+      const data ={
+        email, password, name
+      }
+
+      const response = await api.post("/api/users", data);
+      console.log(response.data);
+    }
+
     return(
         <LayoutComponents>
-            <form className="login-form">
+            <form onSubmit={handleSaveUser} className="login-form">
 
         <span className="login-form-title">Criar Conta</span>
         <span className="login-form-title">
@@ -19,7 +31,7 @@ export const Register =()=>{
         <div className="wrap-input">
           <input
             className={name !== '' ? 'has-val input' : 'input'}
-            type="email"
+            type="txt"
             value={name}
             onChange={e => setName(e.target.value)}
 
@@ -40,22 +52,22 @@ export const Register =()=>{
 
         <div className="wrap-input">
           <input
-            className={passworld !== '' ? 'has-val input' : 'input'}
-            type="passworld"
-            value={passworld}
-            onChange={e => setPassworld(e.target.value)}
+            className={password !== '' ? 'has-val input' : 'input'}
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
 
           />
           <span className="focus-input" data-placeholder="Senha"></span>
         </div>
 
         <div className="container-login-form-btn">
-          <button className="login-form-btn">Cadastra</button>
+          <button type="submit" className="login-form-btn">Cadastrar</button>
         </div>
         <div className="text-center">
           <span className="tx1">Já possui conta?</span>
 
-          <Link className="txt2" to="/login">
+          <Link className="txt2" to="/">
             Acessar com Email e Senha.
           </Link>
         </div>
