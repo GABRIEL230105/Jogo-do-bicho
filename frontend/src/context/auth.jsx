@@ -6,7 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
-    // Carrega usuário do localStorage ao iniciar
+   
     useEffect(() => {
         const storagedUser = localStorage.getItem("@Auth:user");
         const storagedToken = localStorage.getItem("@Auth:token");
@@ -29,10 +29,10 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("@Auth:user", JSON.stringify(user));
             localStorage.setItem("@Auth:token", token);
 
-            return true; // ✅ Retorna sucesso
+            return true; 
         } catch (err) {
             alert("Erro ao fazer login");
-            return false; // ❌ Retorna falha
+            return false; 
         }
     };
 
