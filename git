@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 🔽 Clona o repositório
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 🔽 Instala Node
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 🔽 Backend
+      - name: Backend
+        run: |
+          cd backend
+          yarn
+          yarn test
+
+      # 🔽 Frontend
+      - name: Frontend
+        run: |
+          cd frontend
+          yarn
+          yarn build

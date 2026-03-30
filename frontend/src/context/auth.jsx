@@ -4,47 +4,58 @@ import { api } from "../services/api";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-   
-    useEffect(() => {
-        const storagedUser = localStorage.getItem("@Auth:user");
-        const storagedToken = localStorage.getItem("@Auth:token");
+  useEffect(() => {
+    const storagedUser = localStorage.getItem("@Auth:user");
+    const storagedToken = localStorage.getItem("@Auth:token");
 
-        if (storagedUser && storagedToken && storagedUser !== "undefined") {
-            setUser(JSON.parse(storagedUser));
-            api.defaults.headers.common["Authorization"] = `Bearer ${storagedToken}`;
-        }
-    }, []);
+    if (
+      storagedUser &&
+      storagedToken &&
+      storagedUser !== "undefined" &&
+      storagedToken !== "undefined" &&
+      storagedToken !== "null"
+    ) {
+      setUser(JSON.parse(storagedUser));
+      api.defaults.headers.common["Authorization"] = `Bearer ${storagedToken}`;
+    }
+  }, []);
 
-    const SignIn = async (email, password) => {
-        try {
-            const response = await api.post("/api/users/login", { email, password });
+  const SignIn = async (email, password) => {
+    try {
+      const response = await api.post("/api/users/login", { email, password });
 
-            const { user, token } = response.data;
+      const { user, token } = response.data;
 
-            setUser(user);
-            api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      if (!token || token === "null" || token === "undefined") {
+        console.log("TOKEN INVÁLIDO NO LOGIN:", response.data);
+        return false;
+      }
 
-            localStorage.setItem("@Auth:user", JSON.stringify(user));
-            localStorage.setItem("@Auth:token", token);
+      setUser(user);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-            return true; 
-        } catch (err) {
-            alert("Erro ao fazer login");
-            return false; 
-        }
-    };
+      localStorage.setItem("@Auth:user", JSON.stringify(user));
+      localStorage.setItem("@Auth:token", token);
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                Signed: !!user,
-                SignIn,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+      return true;
+    } catch (err) {
+      console.log("ERRO AO FAZER LOGIN:", err.response?.data || err.message);
+      alert("Erro ao fazer login");
+      return false;
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        Signed: !!user,
+        SignIn,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
