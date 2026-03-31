@@ -8,27 +8,30 @@ jobs:
   teste:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      # 🔍 DEBUG (opcional, mas útil)
+      - name: Ver estrutura
+        run: ls -R
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 🔥 BACKEND (corrigido aqui)
       - name: Backend
+        run: |
+          cd blackend
+          yarn
+          yarn test
         env:
           NODE_ENV: test
           JWT_SECRET: abc123
-        run: |
-          cd backend
-          yarn
-          yarn test
 
+      # 🔥 FRONTEND
       - name: Frontend
         run: |
           cd frontend
