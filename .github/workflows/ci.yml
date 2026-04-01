@@ -2,38 +2,78 @@ name: CI
 
 on:
   push:
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 jobs:
-  teste:
+  linter:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔍 DEBUG (opcional, mas útil)
-      - name: Ver estrutura
-        run: ls -R
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Lint backend
+        working-directory: backend
+        run: |
+          yarn
+          yarn lint
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: |
+          yarn
+          yarn lint
+
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: yarn
 
-      # 🔥 BACKEND (corrigido aqui)
-      - name: Backend
-        run: |
-          cd blackend
-          yarn
-          yarn test
+      - name: Test backend
+        working-directory: backend
         env:
           NODE_ENV: test
           JWT_SECRET: abc123
-
-      # 🔥 FRONTEND
-      - name: Frontend
         run: |
-          cd frontend
+          yarn
+          yarn test
+
+  build-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Build backend check
+        working-directory: backend
+        run: |
+          yarn
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
           yarn
           yarn build

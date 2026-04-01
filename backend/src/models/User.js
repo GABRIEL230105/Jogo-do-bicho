@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       required: [true, "Email é obrigatório"],
-      match: /.+\@.+\..+/,
+      match: /.+@.+\..+/, // ✅ corrigido aqui
     },
 
     password: {
@@ -52,4 +52,5 @@ userSchema.pre("save", async function (next) {
 });
 
 const User = mongoose.model("User", userSchema);
+
 module.exports = User;
