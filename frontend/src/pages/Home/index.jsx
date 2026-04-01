@@ -98,6 +98,7 @@ export const Home = () => {
         setSaldo(userData?.balance ?? 0);
       }
     } catch (error) {
+      console.error(error); 
       const userData = storagedUser ? JSON.parse(storagedUser) : null;
       setSaldo(userData?.balance ?? 0);
     }
@@ -121,6 +122,7 @@ export const Home = () => {
         setHistorico([]);
       }
     } catch (error) {
+      console.error(error); 
       setHistorico([]);
     }
   }
@@ -202,6 +204,7 @@ export const Home = () => {
       setAnimal("");
       setApostaNumero("");
     } catch (error) {
+      console.error(error); 
       alert("Erro ao apostar");
     }
   };

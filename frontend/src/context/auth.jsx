@@ -4,9 +4,7 @@ import { api } from "../services/api";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const storagedUser = localStorage.getItem("@Auth:user");
     const storagedToken = localStorage.getItem("@Auth:token");
 
@@ -17,7 +15,20 @@ export const AuthProvider = ({ children }) => {
       storagedToken !== "undefined" &&
       storagedToken !== "null"
     ) {
-      setUser(JSON.parse(storagedUser));
+      return JSON.parse(storagedUser);
+    }
+
+    return null;
+  });
+
+  useEffect(() => {
+    const storagedToken = localStorage.getItem("@Auth:token");
+
+    if (
+      storagedToken &&
+      storagedToken !== "undefined" &&
+      storagedToken !== "null"
+    ) {
       api.defaults.headers.common["Authorization"] = `Bearer ${storagedToken}`;
     }
   }, []);
@@ -47,12 +58,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const Logout = () => {
+    localStorage.removeItem("@Auth:user");
+    localStorage.removeItem("@Auth:token");
+    setUser(null);
+    delete api.defaults.headers.common["Authorization"];
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         Signed: !!user,
         SignIn,
+        Logout,
       }}
     >
       {children}
