@@ -101,11 +101,13 @@ module.exports = {
 
   async balance(req, res) {
     try {
-      if (!req.user || !req.user.id) {
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
@@ -118,21 +120,57 @@ module.exports = {
     }
   },
 
+  async deposit(req, res) {
+    try {
+      let { value } = req.body;
+      value = Number(value);
+
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      if (!value || value <= 0) {
+        return res.status(400).json({ message: "Valor de depósito inválido" });
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      user.balance += value;
+      await user.save();
+
+      return res.status(200).json({
+        message: "Depósito realizado com sucesso",
+        balance: user.balance,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Erro ao realizar depósito" });
+    }
+  },
+
   async bet(req, res) {
     try {
       let { amount } = req.body;
 
       amount = Number(amount);
 
+      const userId = req.user?._id || req.user?.id;
+
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Valor inválido" });
       }
 
-      if (!req.user || !req.user.id) {
+      if (!userId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
@@ -161,7 +199,9 @@ module.exports = {
 
       amount = Number(amount);
 
-      if (!req.user || !req.user.id) {
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
@@ -201,7 +241,7 @@ module.exports = {
         }
       }
 
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
@@ -238,7 +278,7 @@ module.exports = {
 
       if (tipo === "milhar") {
         ganhou = aposta === numeroSorteado;
-        premio = ganhou ? amount * 1000 : 0;
+        premio = ganhou ? amount * 4000 : 0;
       }
 
       if (ganhou) {

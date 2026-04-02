@@ -9,6 +9,7 @@ export const Home = () => {
   const [saldo, setSaldo] = useState(0);
   const [animal, setAnimal] = useState("");
   const [valor, setValor] = useState("");
+  const [valorDeposito, setValorDeposito] = useState("");
   const [resultado, setResultado] = useState("");
   const [historico, setHistorico] = useState([]);
   const [user, setUser] = useState(null);
@@ -98,7 +99,7 @@ export const Home = () => {
         setSaldo(userData?.balance ?? 0);
       }
     } catch (error) {
-      console.error(error); 
+      console.error(error);
       const userData = storagedUser ? JSON.parse(storagedUser) : null;
       setSaldo(userData?.balance ?? 0);
     }
@@ -122,10 +123,60 @@ export const Home = () => {
         setHistorico([]);
       }
     } catch (error) {
-      console.error(error); 
+      console.error(error);
       setHistorico([]);
     }
   }
+
+  const depositar = async () => {
+    const token = localStorage.getItem("@Auth:token");
+
+    try {
+      if (!valorDeposito || Number(valorDeposito) <= 0) {
+        alert("Digite um valor válido para depósito");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/deposit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          value: Number(valorDeposito),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data?.message || "Erro ao depositar");
+        return;
+      }
+
+      setSaldo(data.balance ?? saldo);
+      setValorDeposito("");
+
+      const storagedUser = localStorage.getItem("@Auth:user");
+      const userData = storagedUser ? JSON.parse(storagedUser) : null;
+
+      if (userData) {
+        const updatedUser = {
+          ...userData,
+          balance: data.balance,
+        };
+
+        localStorage.setItem("@Auth:user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+
+      alert("Depósito realizado com sucesso 💰");
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao conectar com o servidor");
+    }
+  };
 
   const apostar = async () => {
     if (!valor || Number(valor) <= 0) {
@@ -198,13 +249,26 @@ export const Home = () => {
       setAnimalResultado(grupoInfo?.animal || "");
       setResultado(data.message || "");
 
+      const storagedUser = localStorage.getItem("@Auth:user");
+      const userData = storagedUser ? JSON.parse(storagedUser) : null;
+
+      if (userData && data.balance !== undefined) {
+        const updatedUser = {
+          ...userData,
+          balance: data.balance,
+        };
+
+        localStorage.setItem("@Auth:user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+
       await carregarHistorico();
 
       setValor("");
       setAnimal("");
       setApostaNumero("");
     } catch (error) {
-      console.error(error); 
+      console.error(error);
       alert("Erro ao apostar");
     }
   };
@@ -301,6 +365,41 @@ export const Home = () => {
             }}
           >
             Saldo: R$ {saldo}
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <h3 style={{ marginBottom: "10px" }}>Depositar saldo</h3>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <input
+                type="number"
+                placeholder="Valor do depósito"
+                value={valorDeposito}
+                onChange={(e) => setValorDeposito(e.target.value)}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  fontSize: "16px",
+                  minWidth: "220px",
+                }}
+              />
+
+              <button
+                onClick={depositar}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: "10px",
+                  border: "none",
+                  backgroundColor: "#22c55e",
+                  color: "white",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Depositar
+              </button>
+            </div>
           </div>
         </div>
 
