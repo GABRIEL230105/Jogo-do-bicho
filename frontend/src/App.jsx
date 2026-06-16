@@ -1,16 +1,8 @@
-import { AppRouter } from './routes';
-import './assets/global.css';
-import { AuthProvider } from './context/auth';
+import { AppRouter } from "./routes";
+import "./assets/global.css";
 
-export const App =() => {
-  
-  
-  return (
-    <AuthProvider>
-    <AppRouter />
-    </AuthProvider>
-    
-  );
+function App() {
+  return <AppRouter />;
 }
 
-
+export default App;

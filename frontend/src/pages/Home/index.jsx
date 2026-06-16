@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import jg from "../../assets/jg.png";
+import "./styles.css";
 
 export const Home = () => {
   const API_URL = "http://localhost:3333/api/users";
@@ -62,11 +63,7 @@ export const Home = () => {
   useEffect(() => {
     const storagedUser = localStorage.getItem("@Auth:user");
     const token = localStorage.getItem("@Auth:token");
-
-    if (storagedUser && storagedUser !== "undefined") {
-      setUser(JSON.parse(storagedUser));
-    }
-
+    if (storagedUser && storagedUser !== "undefined") setUser(JSON.parse(storagedUser));
     if (token && token !== "null" && token !== "undefined") {
       carregarSaldo();
       carregarHistorico();
@@ -82,200 +79,94 @@ export const Home = () => {
   async function carregarSaldo() {
     const token = localStorage.getItem("@Auth:token");
     const storagedUser = localStorage.getItem("@Auth:user");
-
     try {
-      const res = await fetch(`${API_URL}/balance`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const res = await fetch(`${API_URL}/balance`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-
-      if (res.ok) {
-        setSaldo(data.balance ?? 0);
-      } else {
-        const userData = storagedUser ? JSON.parse(storagedUser) : null;
-        setSaldo(userData?.balance ?? 0);
-      }
-    } catch (error) {
-      console.error(error);
-      const userData = storagedUser ? JSON.parse(storagedUser) : null;
-      setSaldo(userData?.balance ?? 0);
+      if (res.ok) { setSaldo(data.balance ?? 0); }
+      else { const u = storagedUser ? JSON.parse(storagedUser) : null; setSaldo(u?.balance ?? 0); }
+    } catch {
+      const u = storagedUser ? JSON.parse(storagedUser) : null; setSaldo(u?.balance ?? 0);
     }
   }
 
   async function carregarHistorico() {
     const token = localStorage.getItem("@Auth:token");
-
     try {
-      const res = await fetch(`${API_URL}/history`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const res = await fetch(`${API_URL}/history`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-
-      if (res.ok) {
-        setHistorico(Array.isArray(data) ? data : []);
-      } else {
-        setHistorico([]);
-      }
-    } catch (error) {
-      console.error(error);
-      setHistorico([]);
-    }
+      setHistorico(res.ok && Array.isArray(data) ? data : []);
+    } catch { setHistorico([]); }
   }
 
   const depositar = async () => {
     const token = localStorage.getItem("@Auth:token");
-
+    if (!valorDeposito || Number(valorDeposito) <= 0) { alert("Digite um valor válido para depósito"); return; }
     try {
-      if (!valorDeposito || Number(valorDeposito) <= 0) {
-        alert("Digite um valor válido para depósito");
-        return;
-      }
-
       const res = await fetch(`${API_URL}/deposit`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          value: Number(valorDeposito),
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ value: Number(valorDeposito) }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        alert(data?.message || "Erro ao depositar");
-        return;
-      }
-
+      if (!res.ok) { alert(data?.message || "Erro ao depositar"); return; }
       setSaldo(data.balance ?? saldo);
       setValorDeposito("");
-
       const storagedUser = localStorage.getItem("@Auth:user");
       const userData = storagedUser ? JSON.parse(storagedUser) : null;
-
       if (userData) {
-        const updatedUser = {
-          ...userData,
-          balance: data.balance,
-        };
-
+        const updatedUser = { ...userData, balance: data.balance };
         localStorage.setItem("@Auth:user", JSON.stringify(updatedUser));
         setUser(updatedUser);
       }
-
       alert("Depósito realizado com sucesso 💰");
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao conectar com o servidor");
-    }
+    } catch { alert("Erro ao conectar com o servidor"); }
   };
 
   const apostar = async () => {
-    if (!valor || Number(valor) <= 0) {
-      alert("Digite um valor válido");
-      return;
-    }
-
+    if (!valor || Number(valor) <= 0) { alert("Digite um valor válido"); return; }
     let aposta = "";
-
     if (tipo === "grupo") {
-      if (!animal) {
-        alert("Escolha um animal");
-        return;
-      }
-
+      if (!animal) { alert("Escolha um animal"); return; }
       aposta = String(animais.indexOf(animal) + 1).padStart(2, "0");
     }
-
     if (tipo === "dezena") {
-      if (!/^\d{2}$/.test(apostaNumero)) {
-        alert("Digite uma dezena válida (00 a 99)");
-        return;
-      }
-
+      if (!/^\d{2}$/.test(apostaNumero)) { alert("Digite uma dezena válida (00 a 99)"); return; }
       aposta = apostaNumero;
     }
-
     if (tipo === "milhar") {
-      if (!/^\d{4}$/.test(apostaNumero)) {
-        alert("Digite uma milhar válida (0000 a 9999)");
-        return;
-      }
-
+      if (!/^\d{4}$/.test(apostaNumero)) { alert("Digite uma milhar válida (0000 a 9999)"); return; }
       aposta = apostaNumero;
     }
-
     const token = localStorage.getItem("@Auth:token");
-
     try {
       const res = await fetch(`${API_URL}/play`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          amount: Number(valor),
-          tipo,
-          aposta,
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: Number(valor), tipo, aposta }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        alert(data?.message || data || "Erro ao apostar");
-        return;
-      }
-
+      if (!res.ok) { alert(data?.message || data || "Erro ao apostar"); return; }
       setPremio(data.premio ?? 0);
       setSaldo(data.balance ?? saldo);
       setNumeroSorteado(data.numeroSorteado ?? "");
       setDezenaSorteada(data.dezenaSorteada ?? "");
       setGrupoSorteado(data.grupoSorteado ?? "");
-
-      const grupoInfo = tabelaGrupos.find(
-        (item) => item.grupo === (data.grupoSorteado ?? "")
-      );
-
+      const grupoInfo = tabelaGrupos.find((item) => item.grupo === (data.grupoSorteado ?? ""));
       setAnimalResultado(grupoInfo?.animal || "");
       setResultado(data.message || "");
-
       const storagedUser = localStorage.getItem("@Auth:user");
       const userData = storagedUser ? JSON.parse(storagedUser) : null;
-
       if (userData && data.balance !== undefined) {
-        const updatedUser = {
-          ...userData,
-          balance: data.balance,
-        };
-
+        const updatedUser = { ...userData, balance: data.balance };
         localStorage.setItem("@Auth:user", JSON.stringify(updatedUser));
         setUser(updatedUser);
       }
-
       await carregarHistorico();
-
-      setValor("");
-      setAnimal("");
-      setApostaNumero("");
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao apostar");
-    }
+      setValor(""); setAnimal(""); setApostaNumero("");
+    } catch { alert("Erro ao apostar"); }
   };
 
-  const grupoSelecionado = tabelaGrupos.find((g) =>
-    g.dezenas.includes(apostaNumero)
-  );
+  const grupoSelecionado = tabelaGrupos.find((g) => g.dezenas.includes(apostaNumero));
 
   const tipoButtonStyle = (ativo) => ({
     padding: "10px 18px",
@@ -288,457 +179,215 @@ export const Home = () => {
     transition: "0.2s",
   });
 
-  const cardStyle = {
-    backgroundColor: "#0f172a",
-    border: "1px solid #334155",
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-  };
-
   return (
-    <div
-      style={{
-        padding: "32px",
-        background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
-        minHeight: "100vh",
-        color: "white",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1300px",
-          margin: "0 auto",
-        }}
-      >
-        <div
-          style={{
-            ...cardStyle,
-            position: "relative",
-            marginBottom: "24px",
-          }}
-        >
-          <button
-            onClick={sair}
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "130px",
-              padding: "10px 16px",
-              borderRadius: "10px",
-              border: "none",
-              backgroundColor: "#dc2626",
-              color: "white",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Sair
-          </button>
+    <div className="home-wrapper">
+        <div className="home-inner">
 
-          <img
-            src={jg}
-            alt="Logo"
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              width: "90px",
-              borderRadius: "12px",
-              opacity: 0.95,
-            }}
-          />
-
-          <h1 style={{ margin: 0, fontSize: "42px" }}>Jogo do Bicho</h1>
-          <p style={{ marginTop: "10px", fontSize: "22px" }}>Olá, {user?.name}</p>
-
-          <div
-            style={{
-              display: "inline-block",
-              marginTop: "10px",
-              padding: "10px 16px",
-              borderRadius: "12px",
-              backgroundColor: "#16a34a",
-              fontWeight: "bold",
-              fontSize: "22px",
-            }}
-          >
-            Saldo: R$ {saldo}
-          </div>
-
-          <div style={{ marginTop: "20px" }}>
-            <h3 style={{ marginBottom: "10px" }}>Depositar saldo</h3>
-
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <input
-                type="number"
-                placeholder="Valor do depósito"
-                value={valorDeposito}
-                onChange={(e) => setValorDeposito(e.target.value)}
-                style={{
-                  padding: "10px",
-                  borderRadius: "10px",
-                  border: "1px solid #64748b",
-                  fontSize: "16px",
-                  minWidth: "220px",
-                }}
-              />
-
-              <button
-                onClick={depositar}
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: "10px",
-                  border: "none",
-                  backgroundColor: "#22c55e",
-                  color: "white",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
-                Depositar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.2fr 1fr",
-            gap: "24px",
-            alignItems: "start",
-          }}
-        >
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>Nova aposta</h2>
-
-            <h3>Tipo de aposta</h3>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
-              <button
-                style={tipoButtonStyle(tipo === "grupo")}
-                onClick={() => {
-                  setTipo("grupo");
-                  setAnimal("");
-                  setApostaNumero("");
-                }}
-              >
-                Grupo
-              </button>
-
-              <button
-                style={tipoButtonStyle(tipo === "dezena")}
-                onClick={() => {
-                  setTipo("dezena");
-                  setAnimal("");
-                  setApostaNumero("");
-                }}
-              >
-                Dezena
-              </button>
-
-              <button
-                style={tipoButtonStyle(tipo === "milhar")}
-                onClick={() => {
-                  setTipo("milhar");
-                  setAnimal("");
-                  setApostaNumero("");
-                }}
-              >
-                Milhar
-              </button>
-            </div>
-
-            {tipo === "grupo" && (
-              <>
-                <h3>Escolha um animal</h3>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(5, 1fr)",
-                    gap: "10px",
-                    marginBottom: "20px",
-                  }}
-                >
-                  {animais.map((a, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setAnimal(a)}
-                      style={{
-                        padding: "14px",
-                        borderRadius: "12px",
-                        border: animal === a ? "2px solid #22c55e" : "1px solid #64748b",
-                        background: animal === a ? "#dcfce7" : "white",
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {String(index + 1).padStart(2, "0")} - {a}
-                    </button>
-                  ))}
-                </div>
-
-                {animal && (
-                  <div
-                    style={{
-                      marginBottom: "20px",
-                      padding: "12px",
-                      borderRadius: "10px",
-                      backgroundColor: "#1e293b",
-                      border: "1px solid #475569",
-                    }}
-                  >
-                    Animal escolhido: <strong>{animal}</strong>
-                  </div>
-                )}
-              </>
-            )}
-
-            {tipo === "dezena" && (
-              <>
-                <h3>Digite a dezena</h3>
-                <input
-                  type="text"
-                  maxLength="2"
-                  placeholder="00 a 99"
-                  value={apostaNumero}
-                  onChange={(e) => setApostaNumero(e.target.value.replace(/\D/g, ""))}
-                  style={{
-                    width: "100%",
-                    padding: "14px",
-                    borderRadius: "12px",
-                    border: "1px solid #64748b",
-                    marginBottom: "12px",
-                    fontSize: "16px",
-                  }}
-                />
-
-                {grupoSelecionado && (
-                  <div
-                    style={{
-                      padding: "12px",
-                      borderRadius: "12px",
-                      backgroundColor: "#fef3c7",
-                      color: "#78350f",
-                      fontWeight: "bold",
-                      marginBottom: "18px",
-                    }}
-                  >
-                    A dezena <strong>{apostaNumero}</strong> pertence ao grupo{" "}
-                    <strong>{grupoSelecionado.grupo}</strong> - {grupoSelecionado.animal}
-                  </div>
-                )}
-              </>
-            )}
-
-            {tipo === "milhar" && (
-              <>
-                <h3>Digite a milhar</h3>
-                <input
-                  type="text"
-                  maxLength="4"
-                  placeholder="0000 a 9999"
-                  value={apostaNumero}
-                  onChange={(e) => setApostaNumero(e.target.value.replace(/\D/g, ""))}
-                  style={{
-                    width: "100%",
-                    padding: "14px",
-                    borderRadius: "12px",
-                    border: "1px solid #64748b",
-                    marginBottom: "18px",
-                    fontSize: "16px",
-                  }}
-                />
-              </>
-            )}
-
-            <h3>Valor da aposta</h3>
-            <input
-              type="number"
-              placeholder="Digite o valor"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "1px solid #64748b",
-                marginBottom: "18px",
-                fontSize: "16px",
-              }}
-            />
-
-            <button
-              onClick={apostar}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "none",
-                backgroundColor: "#22c55e",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                cursor: "pointer",
-              }}
-            >
-              Apostar
-            </button>
-
-            {resultado && (
-              <div
-                style={{
-                  marginTop: "24px",
-                  padding: "18px",
-                  backgroundColor: "#020617",
-                  borderRadius: "14px",
-                  border: "1px solid #334155",
-                }}
-              >
-                <h3 style={{ marginTop: 0 }}>{resultado}</h3>
-                <p>🎯 Número sorteado: <strong>{numeroSorteado}</strong></p>
-                <p>🔢 Dezena: <strong>{dezenaSorteada}</strong></p>
-                <p>
-                  🐾 Grupo: <strong>{grupoSorteado}</strong>
-                  {animalResultado ? ` - ${animalResultado}` : ""}
-                </p>
-
-                {premio > 0 ? (
-                  <div
-                    style={{
-                      marginTop: "10px",
-                      display: "inline-block",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      backgroundColor: "#16a34a",
-                      color: "white",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    💰 Prêmio: R$ {premio}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      marginTop: "10px",
-                      display: "inline-block",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      backgroundColor: "#7f1d1d",
-                      color: "white",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Sem prêmio nesta rodada
-                  </div>
-                )}
+          {/* ── Header ── */}
+          <div className="card header-card">
+            <div className="header-top">
+              <h1 className="header-title">Jogo do Bicho</h1>
+              <div className="header-actions">
+                <button onClick={sair} className="btn-sair">Sair</button>
+                <img src={jg} alt="Logo" className="logo-img" />
               </div>
-            )}
+            </div>
+
+            <p style={{ margin: "0 0 6px", fontSize: "18px" }}>Olá, {user?.name}</p>
+
+            <div className="saldo-badge">
+              Saldo: R$ {saldo}
+            </div>
+
+            <div style={{ marginTop: "20px" }}>
+              <h3 style={{ marginBottom: "10px" }}>Depositar saldo</h3>
+              <div className="deposito-row">
+                <input
+                  type="number"
+                  placeholder="Valor do depósito"
+                  value={valorDeposito}
+                  onChange={(e) => setValorDeposito(e.target.value)}
+                  className="deposito-input"
+                />
+                <button onClick={depositar} className="btn-depositar">Depositar</button>
+              </div>
+            </div>
           </div>
 
-          {(tipo === "grupo" || tipo === "dezena") && (
-            <div style={cardStyle}>
-              <h2 style={{ marginTop: 0 }}>Tabela de grupos e dezenas</h2>
+          {/* ── Grid principal ── */}
+          <div className="main-grid">
 
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    backgroundColor: "white",
-                    color: "#0f172a",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <thead>
-                    <tr style={{ backgroundColor: "#e2e8f0" }}>
-                      <th style={{ padding: "12px" }}>Grupo</th>
-                      <th style={{ padding: "12px" }}>Animal</th>
-                      <th style={{ padding: "12px" }}>Dezenas</th>
-                    </tr>
-                  </thead>
+            {/* Card aposta */}
+            <div className="card">
+              <h2 style={{ marginTop: 0 }}>Nova aposta</h2>
 
-                  <tbody>
-                    {tabelaGrupos.map((item) => (
-                      <tr
-                        key={item.grupo}
+              <h3>Tipo de aposta</h3>
+              <div className="tipo-row">
+                <button style={tipoButtonStyle(tipo === "grupo")} onClick={() => { setTipo("grupo"); setAnimal(""); setApostaNumero(""); }}>Grupo</button>
+                <button style={tipoButtonStyle(tipo === "dezena")} onClick={() => { setTipo("dezena"); setAnimal(""); setApostaNumero(""); }}>Dezena</button>
+                <button style={tipoButtonStyle(tipo === "milhar")} onClick={() => { setTipo("milhar"); setAnimal(""); setApostaNumero(""); }}>Milhar</button>
+              </div>
+
+              {tipo === "grupo" && (
+                <>
+                  <h3>Escolha um animal</h3>
+                  <div className="animais-grid">
+                    {animais.map((a, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setAnimal(a)}
+                        className="btn-animal"
                         style={{
-                          backgroundColor:
-                            grupoSelecionado?.grupo === item.grupo ? "#fde68a" : "white",
+                          border: animal === a ? "2px solid #22c55e" : "1px solid #64748b",
+                          background: animal === a ? "#dcfce7" : "white",
                         }}
                       >
-                        <td style={{ padding: "10px", textAlign: "center", fontWeight: "bold" }}>
-                          {item.grupo}
-                        </td>
-                        <td style={{ padding: "10px" }}>{item.animal}</td>
-                        <td style={{ padding: "10px" }}>{item.dezenas.join(", ")}</td>
-                      </tr>
+                        {String(index + 1).padStart(2, "0")} - {a}
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+
+                  {animal && (
+                    <div style={{ marginBottom: "20px", padding: "12px", borderRadius: "10px", backgroundColor: "#1e293b", border: "1px solid #475569" }}>
+                      Animal escolhido: <strong>{animal}</strong>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {tipo === "dezena" && (
+                <>
+                  <h3>Digite a dezena</h3>
+                  <input
+                    type="text"
+                    maxLength="2"
+                    placeholder="00 a 99"
+                    value={apostaNumero}
+                    onChange={(e) => setApostaNumero(e.target.value.replace(/\D/g, ""))}
+                    className="input-full"
+                    style={{ marginBottom: "12px" }}
+                  />
+                  {grupoSelecionado && (
+                    <div style={{ padding: "12px", borderRadius: "12px", backgroundColor: "#fef3c7", color: "#78350f", fontWeight: "bold", marginBottom: "18px" }}>
+                      A dezena <strong>{apostaNumero}</strong> pertence ao grupo{" "}
+                      <strong>{grupoSelecionado.grupo}</strong> - {grupoSelecionado.animal}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {tipo === "milhar" && (
+                <>
+                  <h3>Digite a milhar</h3>
+                  <input
+                    type="text"
+                    maxLength="4"
+                    placeholder="0000 a 9999"
+                    value={apostaNumero}
+                    onChange={(e) => setApostaNumero(e.target.value.replace(/\D/g, ""))}
+                    className="input-full"
+                  />
+                </>
+              )}
+
+              <h3>Valor da aposta</h3>
+              <input
+                type="number"
+                placeholder="Digite o valor"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="input-full"
+              />
+
+              <button onClick={apostar} className="btn-apostar">Apostar</button>
+
+              {resultado && (
+                <div className="resultado-box">
+                  <h3 style={{ marginTop: 0 }}>{resultado}</h3>
+                  <p>🎯 Número sorteado: <strong>{numeroSorteado}</strong></p>
+                  <p>🔢 Dezena: <strong>{dezenaSorteada}</strong></p>
+                  <p>🐾 Grupo: <strong>{grupoSorteado}</strong>{animalResultado ? ` - ${animalResultado}` : ""}</p>
+                  {premio > 0 ? (
+                    <div style={{ marginTop: "10px", display: "inline-block", padding: "10px 14px", borderRadius: "10px", backgroundColor: "#16a34a", color: "white", fontWeight: "bold" }}>
+                      💰 Prêmio: R$ {premio}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: "10px", display: "inline-block", padding: "10px 14px", borderRadius: "10px", backgroundColor: "#7f1d1d", color: "white", fontWeight: "bold" }}>
+                      Sem prêmio nesta rodada
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div style={{ ...cardStyle, marginTop: "24px" }}>
-          <h2 style={{ marginTop: 0 }}>Histórico de apostas</h2>
-
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                backgroundColor: "#0f172a",
-                color: "white",
-              }}
-            >
-              <thead>
-                <tr style={{ backgroundColor: "#1e293b" }}>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Tipo</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Aposta</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Valor</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Número sorteado</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Grupo sorteado</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Status</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Prêmio</th>
-                  <th style={{ padding: "12px", border: "1px solid #334155" }}>Data</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {historico.map((item, index) => (
-                  <tr key={index}>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.tipo}</td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.aposta}</td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>R$ {item.valor}</td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.numeroSorteado}</td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.grupoSorteado ?? "-"}</td>
-                    <td
-                      style={{
-                        padding: "10px",
-                        border: "1px solid #334155",
-                        color: item.ganhou ? "#4ade80" : "#f87171",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {item.ganhou ? "Ganhou" : "Perdeu"}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>R$ {item.premio ?? 0}</td>
-                    <td style={{ padding: "10px", border: "1px solid #334155" }}>
-                      {new Date(item.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Card tabela */}
+            {(tipo === "grupo" || tipo === "dezena") && (
+              <div className="card">
+                <h2 style={{ marginTop: 0 }}>Tabela de grupos e dezenas</h2>
+                <div className="table-wrapper">
+                  <table style={{ backgroundColor: "white", color: "#0f172a", borderRadius: "12px", overflow: "hidden" }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "#e2e8f0" }}>
+                        <th style={{ padding: "12px" }}>Grupo</th>
+                        <th style={{ padding: "12px" }}>Animal</th>
+                        <th style={{ padding: "12px" }}>Dezenas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tabelaGrupos.map((item) => (
+                        <tr key={item.grupo} style={{ backgroundColor: grupoSelecionado?.grupo === item.grupo ? "#fde68a" : "white" }}>
+                          <td style={{ padding: "10px", textAlign: "center", fontWeight: "bold" }}>{item.grupo}</td>
+                          <td style={{ padding: "10px" }}>{item.animal}</td>
+                          <td style={{ padding: "10px" }}>{item.dezenas.join(", ")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* ── Histórico ── */}
+          <div className="card" style={{ marginTop: "24px" }}>
+            <h2 style={{ marginTop: 0 }}>Histórico de apostas</h2>
+            <div className="table-wrapper">
+              <table style={{ backgroundColor: "#0f172a", color: "white" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#1e293b" }}>
+                    <th style={{ padding: "12px", border: "1px solid #334155" }}>Tipo</th>
+                    <th style={{ padding: "12px", border: "1px solid #334155" }}>Aposta</th>
+                    <th style={{ padding: "12px", border: "1px solid #334155" }}>Valor</th>
+                    <th className="col-hide-mobile" style={{ padding: "12px", border: "1px solid #334155" }}>Nº sorteado</th>
+                    <th className="col-hide-mobile" style={{ padding: "12px", border: "1px solid #334155" }}>Grupo</th>
+                    <th style={{ padding: "12px", border: "1px solid #334155" }}>Status</th>
+                    <th style={{ padding: "12px", border: "1px solid #334155" }}>Prêmio</th>
+                    <th className="col-hide-mobile" style={{ padding: "12px", border: "1px solid #334155" }}>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historico.map((item, index) => (
+                    <tr key={index}>
+                      <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.tipo}</td>
+                      <td style={{ padding: "10px", border: "1px solid #334155" }}>{item.aposta}</td>
+                      <td style={{ padding: "10px", border: "1px solid #334155" }}>R$ {item.valor}</td>
+                      <td className="col-hide-mobile" style={{ padding: "10px", border: "1px solid #334155" }}>{item.numeroSorteado}</td>
+                      <td className="col-hide-mobile" style={{ padding: "10px", border: "1px solid #334155" }}>{item.grupoSorteado ?? "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #334155", color: item.ganhou ? "#4ade80" : "#f87171", fontWeight: "bold" }}>
+                        {item.ganhou ? "Ganhou" : "Perdeu"}
+                      </td>
+                      <td style={{ padding: "10px", border: "1px solid #334155" }}>R$ {item.premio ?? 0}</td>
+                      <td className="col-hide-mobile" style={{ padding: "10px", border: "1px solid #334155" }}>
+                        {new Date(item.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
-    </div>
   );
 };
