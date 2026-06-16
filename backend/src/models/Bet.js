@@ -8,42 +8,46 @@ const betSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔥 tipo da aposta
     tipo: {
       type: String,
       enum: ["grupo", "dezena", "milhar"],
       required: true,
     },
 
-    // 💰 valor apostado
     valor: {
       type: Number,
       required: true,
     },
 
-    // 🎯 aposta do usuário (STRING pra manter 00, 0000 etc)
     aposta: {
       type: String,
       required: true,
     },
 
-    // 🎲 número sorteado (sempre 4 dígitos)
-    numeroSorteado: {
-      type: String,
-      required: true,
-    },
+    // 🎲 Os 5 resultados do sorteio
+    numerosSorteados: {
+  type: [String],
+  default: [],
+},
 
-    // 🐾 grupo sorteado (opcional, mas útil)
-    grupoSorteado: {
-      type: String,
-    },
+gruposSorteados: {
+  type: [String],
+  default: [],
+},
 
-    ganhou: {
-      type: Boolean,
-      required: true,
-    },
+numeroSorteado: {
+  type: String,
+},
 
-    // 🏆 valor ganho
+grupoSorteado: {
+  type: String,
+},
+
+ganhou: {
+  type: Boolean,
+  required: true,
+},
+
     premio: {
       type: Number,
       default: 0,

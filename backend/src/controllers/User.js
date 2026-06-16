@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Bet = require("../models/Bet");
 const generateToken = require("../utils/generateToken");
 const grupos = require("../utils/bichoGroups");
+const Sorteio = require("../models/Sorteio");
 
 // função auxiliar
 function getGrupoPorDezena(dezena) {
@@ -253,62 +254,98 @@ module.exports = {
 
       user.balance -= amount;
 
-      const numeroSorteado = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, "0");
+      const sorteio = await Sorteio.findOne()
+  .sort({ createdAt: -1 });
 
-      const dezenaSorteada = numeroSorteado.slice(-2);
-      const grupoInfo = getGrupoPorDezena(Number(dezenaSorteada));
-      const grupoSorteado = grupoInfo
-        ? String(grupoInfo.grupo).padStart(2, "0")
-        : null;
+if (!sorteio) {
+  return res.status(400).json({
+    message: "Nenhum sorteio foi realizado ainda"
+  });
+}
 
-      let ganhou = false;
-      let premio = 0;
+const numerosSorteados = [
+  sorteio.primeiroPremio,
+  sorteio.segundoPremio,
+  sorteio.terceiroPremio,
+  sorteio.quartoPremio,
+  sorteio.quintoPremio,
+];
 
-      if (tipo === "grupo") {
-        ganhou = aposta === grupoSorteado;
-        premio = ganhou ? amount * 18 : 0;
-      }
+const dezenasSorteadas = numerosSorteados.map(
+  numero => numero.slice(-2)
+);
 
-      if (tipo === "dezena") {
-        ganhou = aposta === dezenaSorteada;
-        premio = ganhou ? amount * 60 : 0;
-      }
+const gruposSorteados = dezenasSorteadas.map(dezena => {
+  const grupo = getGrupoPorDezena(Number(dezena));
 
-      if (tipo === "milhar") {
-        ganhou = aposta === numeroSorteado;
-        premio = ganhou ? amount * 4000 : 0;
-      }
+  return grupo
+    ? String(grupo.grupo).padStart(2, "0")
+    : null;
+});
 
-      if (ganhou) {
-        user.balance += premio;
-      }
+let ganhou = false;
+let premio = 0;
 
-      await user.save();
+if (tipo === "grupo") {
+  ganhou = gruposSorteados.includes(aposta);
+  premio = ganhou ? amount * 18 : 0;
+}
 
-      await Bet.create({
-        user: user._id,
-        tipo,
-        valor: amount,
-        aposta,
-        numeroSorteado,
-        grupoSorteado,
-        ganhou,
-        premio,
-      });
+if (tipo === "dezena") {
+  ganhou = dezenasSorteadas.includes(aposta);
+  premio = ganhou ? amount * 60 : 0;
+}
 
-      return res.json({
-        message: ganhou ? "Você ganhou!" : "Você perdeu!",
-        tipo,
-        aposta,
-        numeroSorteado,
-        dezenaSorteada,
-        grupoSorteado,
-        ganhou,
-        premio,
-        balance: user.balance,
-      });
+if (tipo === "milhar") {
+  ganhou = numerosSorteados.includes(aposta);
+  premio = ganhou ? amount * 4000 : 0;
+}
+
+if (ganhou) {
+  user.balance += premio;
+}
+
+await user.save();
+
+const numeroSorteado = numerosSorteados[0];
+const grupoSorteado = gruposSorteados[0];
+const dezenaSorteada = numeroSorteado.slice(-2);
+
+await Bet.create({
+  user: user._id,
+  tipo,
+  valor: amount,
+  aposta,
+
+  // novos campos
+  numerosSorteados,
+  gruposSorteados,
+
+  // compatibilidade com histórico
+  numeroSorteado,
+  grupoSorteado,
+
+  ganhou,
+  premio,
+});
+
+return res.json({
+  message: ganhou ? "Você ganhou!" : "Você perdeu!",
+  tipo,
+  aposta,
+
+  numeroSorteado,
+  dezenaSorteada,
+  grupoSorteado,
+
+  numerosSorteados,
+  dezenasSorteadas,
+  gruposSorteados,
+
+  ganhou,
+  premio,
+  balance: user.balance,
+});
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Erro no jogo" });

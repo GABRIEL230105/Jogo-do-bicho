@@ -1,12 +1,13 @@
 {
-  "name": "blackend",
+  "name": "backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "cross-env NODE_ENV=test jest ",
-    "lint": "eslint ."
+    "test": "cross-env NODE_ENV=test jest",
+    "lint": "eslint .",
+    "build": "echo Backend build successful"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,6 @@
     "@types/express": "^5.0.6",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
-    "cros": "^1.1.0",
     "dotenv": "^10.0.0",
     "express": "^4.17.2",
     "jsonwebtoken": "^8.5.1",
