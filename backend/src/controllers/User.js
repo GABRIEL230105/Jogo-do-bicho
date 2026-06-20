@@ -2,7 +2,7 @@ const User = require("../models/User");
 const Bet = require("../models/Bet");
 const generateToken = require("../utils/generateToken");
 const grupos = require("../utils/bichoGroups");
-const Sorteio = require("../models/Sorteio");
+
 
 // função auxiliar
 function getGrupoPorDezena(dezena) {
