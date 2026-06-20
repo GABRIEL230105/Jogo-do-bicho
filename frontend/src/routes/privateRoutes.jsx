@@ -4,9 +4,7 @@ import { useContext } from "react";
 
 
 export const PrivateRoute = () => {
-    const {Signed} = useContext(AuthContext);
+  const token = localStorage.getItem("token");
 
-    return Signed ? <Outlet /> : <Navigate to="/" />;
-
-    
-}
+  return token ? <Outlet /> : <Navigate to="/" replace />;
+};
